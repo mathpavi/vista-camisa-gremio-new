@@ -1,0 +1,7 @@
+{
+  "name": "Vista a Camisa do Grêmio",
+  "description": "Tire uma foto ou envie uma imagem e a IA a vestirá com a camisa do Grêmio. Depois, transforme a foto em um vídeo emocionante da torcida com o hino do clube!",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

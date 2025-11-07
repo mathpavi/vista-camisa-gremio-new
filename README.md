@@ -4,27 +4,25 @@ Este aplicativo permite que os usuários enviem uma foto ou usem a câmera para 
 
 ## Arquitetura de Produção
 
-Para que este aplicativo possa ser publicado na internet de forma segura, ele foi refatorado para usar uma arquitetura de **Frontend + Backend Proxy**.
+Para que este aplicativo possa ser publicado na internet de forma segura, ele foi reestruturado como um projeto **Vite** com uma **função de backend** (Backend Proxy).
 
 **Por quê?**
-A chave da API do Gemini é um segredo que não deve ser exposto no código do frontend (o que roda no navegador do usuário). Se fosse exposta, qualquer pessoa poderia copiá-la e usá-la, gerando custos em sua conta.
-
-A solução é ter um backend (neste caso, uma *serverless function* ou "função sem servidor") que atua como um intermediário seguro:
-1.  O **Frontend** (seu app React) envia a imagem para o seu **Backend**.
+A chave da API do Gemini é um segredo que não deve ser exposto no código do frontend. A solução é ter um backend (neste caso, uma *serverless function* na pasta `/api`) que atua como um intermediário seguro:
+1.  O **Frontend** (seu app React) envia a imagem para o seu **Backend** no endpoint `/api/api`.
 2.  O **Backend**, que roda em um servidor seguro, recebe a imagem, adiciona a chave secreta da API e faz a chamada para a API do Gemini.
 3.  A API do Gemini retorna o resultado para o seu **Backend**.
-4.  O **Backend** envia o resultado final de volta para o **Frontend**, que o exibe ao usuário.
+4.  O **Backend** envia o resultado final de volta para o **Frontend**.
 
 Sua chave de API nunca sai do ambiente seguro do servidor.
 
 ## Como Publicar (Deploy)
 
-Recomendamos usar plataformas como **Vercel** ou **Netlify**, que possuem planos gratuitos excelentes para projetos como este e facilitam a publicação de frontends e serverless functions.
+Recomendamos usar plataformas como **Vercel** ou **Netlify**, que possuem planos gratuitos excelentes para projetos como este.
 
 ### Passo a Passo (Exemplo com Vercel)
 
 1.  **Crie um Repositório no GitHub:**
-    *   Envie todos os arquivos do projeto (`index.html`, `App.tsx`, `services/geminiService.ts`, `functions/api.ts`, etc.) para um novo repositório no seu GitHub.
+    *   Envie todos os arquivos do projeto para um novo repositório no seu GitHub.
 
 2.  **Crie uma Conta na Vercel:**
     *   Acesse [vercel.com](https://vercel.com/) e crie uma conta, de preferência usando sua conta do GitHub.
@@ -33,37 +31,48 @@ Recomendamos usar plataformas como **Vercel** ou **Netlify**, que possuem planos
     *   No seu dashboard da Vercel, clique em "Add New..." -> "Project".
     *   Importe o repositório que você criou no GitHub.
 
-4.  **Configure o Projeto:**
-    *   A Vercel geralmente detecta que é um projeto Vite/React e configura o build automaticamente.
-    *   A parte mais importante: configurar a chave da API. Vá para a aba **Settings -> Environment Variables**.
+4.  **Configure o Projeto (MUITO IMPORTANTE):**
+    *   A Vercel deve detectar automaticamente que é um projeto **Vite**.
+    *   Verifique se as **Build & Development Settings** estão assim:
+        *   **FRAMEWORK PRESET:** `Vite`
+        *   **BUILD COMMAND:** `npm run build`
+        *   **OUTPUT DIRECTORY:** `dist`
+        *   **INSTALL COMMAND:** `npm install`
+    *   Agora, configure a chave da API. Vá para a aba **Settings -> Environment Variables**.
     *   Adicione uma nova variável de ambiente:
         *   **Name:** `API_KEY`
         *   **Value:** `SUA_CHAVE_SECRETA_DA_API_DO_GEMINI` (cole sua chave aqui)
-    *   Certifique-se de que a variável **NÃO** esteja marcada como "Exposed to the browser". Ela deve estar disponível apenas no ambiente do servidor.
+    *   Certifique-se de que a variável **NÃO** esteja marcada como "Exposed to the browser". Ela deve estar disponível apenas no ambiente do servidor (Serverless Functions).
 
 5.  **Faça o Deploy:**
-    *   Clique no botão "Deploy". A Vercel irá construir seu projeto e publicar tanto o frontend quanto a função que está no diretório `/functions`.
-    *   A Vercel é inteligente e saberá que qualquer arquivo dentro de uma pasta `/api` ou `/functions` deve ser tratado como um endpoint de API.
+    *   Clique no botão "Deploy". A Vercel irá instalar as dependências, construir seu projeto e publicar tanto o frontend (da pasta `dist`) quanto a função que está no diretório `/api`.
 
 6.  **Pronto!**
-    *   Após alguns minutos, seu site estará no ar em um domínio público fornecido pela Vercel (ex: `nome-do-seu-projeto.vercel.app`).
+    *   Após alguns minutos, seu site estará no ar em um domínio público fornecido pela Vercel.
 
-### Estrutura de Arquivos Esperada
+### Estrutura de Arquivos Final
 
-Para que o deploy funcione corretamente, sua estrutura de arquivos deve ser semelhante a esta:
+Sua estrutura de arquivos deve ser semelhante a esta:
 
 ```
 /
-├── index.html
-├── index.tsx
-├── App.tsx
-├── services/
-│   └── geminiService.ts
-├── utils/
-│   └── tracking.ts
-├── functions/
+├── api/
 │   └── api.ts       <-- Sua função de backend segura
-└── README.md
+├── public/
+│   └── hino.mp3
+├── src/
+│   ├── App.tsx
+│   ├── main.tsx
+│   ├── services/
+│   │   └── geminiService.ts
+│   └── utils/
+│       └── tracking.ts
+├── .gitignore
+├── index.html
+├── package.json
+├── tsconfig.json
+├── tsconfig.node.json
+└── vite.config.ts
 ```
 
 Seguindo esses passos, você terá uma aplicação pública, rápida, escalável e, o mais importante, **segura**.

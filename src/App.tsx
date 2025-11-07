@@ -155,6 +155,10 @@ const App: React.FC = () => {
     }, []);
 
     const stopCamera = useCallback(() => {
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
+        }
         setIsCameraActive(false);
     }, []);
 
@@ -218,9 +222,12 @@ const App: React.FC = () => {
             canvas.height = video.videoHeight;
             const context = canvas.getContext('2d');
             if (context) {
+                // Flip the image horizontally for a mirror effect
                 context.translate(canvas.width, 0);
                 context.scale(-1, 1);
                 context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                // Flip back
+                context.setTransform(1, 0, 0, 1, 0, 0);
             }
             const dataUrl = canvas.toDataURL('image/jpeg');
             setOriginalImage(dataUrl);
@@ -231,16 +238,6 @@ const App: React.FC = () => {
     
     const handleGremiofy = async () => {
         if (!originalImage) return;
-
-        // In a production environment with a backend, we don't need this check here.
-        // The backend handles the key. But keeping it doesn't hurt for different environments.
-        /*
-        const hasApiKey = await window.aistudio.hasSelectedApiKey();
-        if (!hasApiKey) {
-            await window.aistudio.openSelectKey();
-            await new Promise(resolve => setTimeout(resolve, 500));
-        }
-        */
 
         setIsLoading(true);
         setError(null);
@@ -258,8 +255,7 @@ const App: React.FC = () => {
               throw new Error("A API não retornou uma imagem.")
             }
         } catch (err: any) {
-            let errorMessage = err.message || 'Ocorreu um erro ao gerar a imagem.';
-            setError(errorMessage);
+            setError(err.message || 'Ocorreu um erro ao gerar a imagem.');
             logEvent('Erro ao Gerar Imagem');
             console.error(err);
         } finally {
@@ -270,14 +266,6 @@ const App: React.FC = () => {
     const handleGenerateVideo = async () => {
         if (!generatedImage) return;
         
-        /*
-        const hasApiKey = await window.aistudio.hasSelectedApiKey();
-        if (!hasApiKey) {
-            await window.aistudio.openSelectKey();
-            await new Promise(resolve => setTimeout(resolve, 500));
-        }
-        */
-
         setIsGeneratingVideo(true);
         setVideoError(null);
         try {
@@ -288,8 +276,7 @@ const App: React.FC = () => {
             incrementStat('videos');
             logEvent('Vídeo Gerado');
         } catch (err: any) {
-             let errorMessage = err.message || 'Ocorreu um erro ao gerar o vídeo.';
-            setVideoError(errorMessage);
+            setVideoError(err.message || 'Ocorreu um erro ao gerar o vídeo.');
             logEvent('Erro ao Gerar Vídeo');
             console.error(err);
         } finally {
@@ -407,7 +394,7 @@ const App: React.FC = () => {
                     )}
                 </div>
             </div>
-             <div className="flex flex-col items-center gap-2 mt-4">
+             <div className="flex flex-col items-center gap-4 mt-4">
                 <div className="flex flex-col sm:flex-row gap-4">
                     <button onClick={handleGremiofy} disabled={isLoading} className="flex items-center justify-center gap-3 bg-blue-500 text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:bg-blue-600 transition-all duration-300 transform hover:scale-105 disabled:bg-blue-400 disabled:cursor-not-allowed disabled:scale-100">
                         <SparklesIcon/> {isLoading ? 'Gerando...' : 'Vestir Camisa do Grêmio!'}
@@ -416,7 +403,6 @@ const App: React.FC = () => {
                        <BackIcon/> Mudar Foto
                     </button>
                 </div>
-                <p className="text-sm text-blue-200">A geração de imagem é feita por IA e pode levar um momento.</p>
             </div>
         </div>
     );
@@ -442,8 +428,8 @@ const App: React.FC = () => {
             {isGeneratingVideo ? (
                 <VideoLoadingState />
             ) : (
-                <div className="flex flex-col items-center w-full">
-                    <div className="flex flex-col sm:flex-row gap-4 mt-6">
+                <div className="flex flex-col items-center w-full mt-6">
+                    <div className="flex flex-col sm:flex-row gap-4">
                         <button onClick={handleGenerateVideo} className="flex items-center justify-center gap-3 bg-green-500 text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:bg-green-600 transition-all duration-300 transform hover:scale-105">
                             <VideoIcon/> Criar Vídeo da Torcida
                         </button>

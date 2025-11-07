@@ -426,7 +426,9 @@ const App: React.FC = () => {
             </div>
             
             {isGeneratingVideo ? (
-                <VideoLoadingState />
+                 <div className="w-full">
+                    <VideoLoadingState />
+                </div>
             ) : (
                 <div className="flex flex-col items-center w-full mt-6">
                     <div className="flex flex-col sm:flex-row gap-4">
